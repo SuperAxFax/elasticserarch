@@ -194,16 +194,58 @@ class KuangshenEsApiApplicationTests {
 
     /**
      * bulkrequest是批量请求的意思
-     * 1：
+     * 1：创建批处理操作请求
+     * 2：创建一个ArrayList数组，并且数值中添加内容
+     * 3：根据数组大小进行循环创建Id并将数据放入请求之中
+     * 4：客户端发送请求并接收返回结果
+     * 5：输出查看是否批量创建成功
      */
     @Test
-    void testBulkRequest(){
+    void testBulkRequest() throws IOException {
         //创建批量操作的请求
         BulkRequest request = new BulkRequest();
         //创建一个ArrayList数组，并往数组中添加内容
         ArrayList<User> userList = new ArrayList<>();
+        userList.add(new User("fax1",23));
+        userList.add(new User("fax2",23));
+        userList.add(new User("fax3",23));
+        userList.add(new User("fax4",23));
+        userList.add(new User("fax5",23));
+        userList.add(new User("fax6",23));
         //根据数组大小进行循环创建id并将数据放入请求中
+        for (int i = 0; i < userList.size(); i++) {
+            request.add(new IndexRequest("fax_index").id(""+(i+1)).source(JSON.toJSONString(userList.get(i)),XContentType.JSON));
+        }
         //客户端发送请求并接收返回的结果
+        BulkResponse responses = restHighLevelClient.bulk(request, RequestOptions.DEFAULT);
         //输出查看是否批量创建成功
+        System.out.println(responses.hasFailures());
+    }
+
+    //测试查询文件
+    /**
+     * 创建搜索请求
+     * 创建构造器，并使用QueryBuilders进行查询
+     * 将查询结果放入构造器，将构造器放入请求语句
+     * 客户端进行查询请求并得到响应的结果
+     * 将查询的结果转成JSON形式输出
+     */
+    @Test
+    void testSearch() throws IOException {
+        //创建搜索请求
+        SearchRequest request = new SearchRequest("fax_index");
+        //常见构造器并给出查询条件（使用QueryBuilders构造器进行查询）
+        SearchSourceBuilder builder = new SearchSourceBuilder();
+        TermQueryBuilder termQuery = QueryBuilders.termQuery("name", "fax3");
+        //将查询条件放入构造器中，将构造器放到请求中
+        builder.query(termQuery);
+        request.source(builder);
+        //客户端发送请求并获取响应结果
+        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        //输出查询后的结果
+        System.out.println(JSON.toJSONString(search.getHits()));
+        for (SearchHit documentFields : search.getHits().getHits()) {
+            System.out.println(documentFields.getSourceAsMap());
+        }
     }
 }
