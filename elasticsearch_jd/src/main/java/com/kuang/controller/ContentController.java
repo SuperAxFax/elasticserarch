@@ -36,7 +36,6 @@ public class ContentController {
         return contentservice.searchPage(keyword,pageNo,pageSize);
     }
 
-
     /**
      * 使用高亮对其查询
      * @param keyword
