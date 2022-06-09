@@ -65,12 +65,15 @@ public class ContentService {
 
 
     /**对elasticsearch中的数据进行搜索
-     *
-     *
+     *创建索引请求，创建资源构造器
+     * 使用构造器进行分页
+     * 使用query构造器进行查询，并调用source构造器中的query方法，参数为tremQueryBuilder
+     * 执行request的source方法，参数为sourceBuilder
+     * 客户端执行请求并得到响应结果
+     * 创建ArrayList数组，将响应得到的结果获取为SourceMap的形式，然后加到list列表中
+     * 返回list列表
      * @return
      * */
-
-
      public List<Map<String,Object>> searchPage(String keyword, int pageNo, int pageSize) throws IOException {
          //创建搜索请求，创建搜索资源source构造器
          SearchRequest request = new SearchRequest("jd_goods");
@@ -95,6 +98,20 @@ public class ContentService {
          return list;
      }
 
+    /**对elasticsearch中的数据进行高亮搜索
+     * 创建搜搜请求，创建搜索资源构造器
+     * 进行分页操作
+     * 实现高亮（创建一个高亮构造器；设置高亮字段，前缀，后缀；在source构造器中调用高亮方法，参数为创建的高亮构造器）
+     * 调用QueryBuilders中的查询方法；执行source构造器中的query方法，参数为构建的查询方法；调用request请求的source方法，参数为source构造器
+     * 客户端调用查询请求并得到响应的结果
+     * 根据响应获得高亮字段，获得高亮字段的title值，再获取响应的map形式的结果。如果高亮字段存在就把它取出来。并使用高亮字段替换原来字段
+     * 将替换后的字段放到list列表，返回list列表
+     * @param keyword
+     * @param pageNo
+     * @param pageSize
+     * @return
+     * @throws IOException
+     */
     public List<Map<String,Object>> searchHighlight(String keyword, int pageNo, int pageSize) throws IOException {
         //创建搜索请求，创建搜索资源source构造器
         SearchRequest request = new SearchRequest("jd_goods");
@@ -102,7 +119,6 @@ public class ContentService {
         //使用构造器进行分页
         sourceBuilder.from(pageNo);
         sourceBuilder.size(pageSize);
-
         //高亮(实现不同的功能就使用不同的builder即可)
         //1: 创建一个高亮构造器
         HighlightBuilder highlightBuilder = new HighlightBuilder();
@@ -123,6 +139,7 @@ public class ContentService {
         SearchResponse response = restHighLevelClient.search(request, RequestOptions.DEFAULT);
         //将查询到的结果循环加入到list列表中
         ArrayList<Map<String,Object>> list = new ArrayList<>();
+
         for(SearchHit hit : response.getHits().getHits()){
             //获取高亮字段
             Map<String, HighlightField> highlightfields =  hit.getHighlightFields();
@@ -132,7 +149,7 @@ public class ContentService {
             Map<String,Object> sourceAsMap =  hit.getSourceAsMap();
             //如果标题不为空，将原来字段替换为高亮字段
             if(title!=null){
-                Text[] fragments = title.fragments();///如果高亮字段存在把这个高亮字段取出来
+                Text[] fragments = title.fragments();//如果高亮字段存在把这个高亮字段取出来
                 String n_title = "";
                 for (Text text : fragments) {
                     n_title += text;
